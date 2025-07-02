@@ -1,0 +1,328 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>가상화폐 이상거래 탐지 시스템</title>
+    <!-- Tailwind CSS CDN (빠른 UI 개발을 위함) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN (데이터 시각화를 위함) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js Date Adapter (시간 축 차트를 위함) -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+        /* 'Inter' 폰트를 기본으로 사용 */
+        body { font-family: 'Inter', sans-serif; }
+        /* 차트 컨테이너에 고정 높이를 주어 반응형 레이아웃에서 차트가 제대로 렌더링되도록 함 */
+        .chart-container {
+            position: relative;
+            height: 300px; /* 차트 높이 고정 */
+            width: 100%;
+        }
+        /* 스크롤바 스타일 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f0f0f0;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* 알림 박스 색상 */
+        .alert-item.fluctuation-alarm {
+            color: #9b2c2c; /* 진한 빨강 */
+            font-weight: 600;
+        }
+        .alert-item.trend-alarm {
+            color: #2c5282; /* 진한 파랑 */
+            font-weight: 600;
+        }
+        .alert-item.wash-trade-alarm {
+            color: #557b2d; /* 진한 초록 */
+            font-weight: 600;
+        }
+        .alert-item.order-wall-alarm {
+            color: #e65100; /* 진한 주황 */
+            font-weight: 600;
+        }
+        .alert-item.pump-dump-alarm {
+            color: #00838f; /* 진한 하늘색 */
+            font-weight: 600;
+        }
+        .alert-item.spoofing-alarm { /* 스푸핑 알람을 위한 새로운 스타일 */
+            color: #6a0dad; /* 진한 보라색 */
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900 p-4">
+    <div class="container mx-auto bg-white rounded-lg shadow-lg p-6 my-8">
+        <h1 class="text-3xl font-bold text-center text-blue-600 mb-6">가상화폐 이상거래 탐지 시스템</h1>
+        
+        <!-- 코인별 현재가 요약 섹션 -->
+        <div id="summary-section" class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">코인별 현재가 요약</h2>
+            <div id="coin-summaries" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- JavaScript를 통해 코인 요약 정보가 여기에 로드됩니다. -->
+                <div class="bg-blue-50 p-4 rounded-lg shadow">
+                    <h3 class="font-bold text-lg text-blue-800">BTC</h3>
+                    <p class="text-gray-700">현재가: 로드 중...</p>
+                    <p class="text-gray-700">변동률(24H): 로드 중...</p>
+                    <p class="text-gray-700">거래량(24H): 로드 중...</p>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-lg shadow">
+                    <h3 class="font-bold text-lg text-blue-800">ETH</h3>
+                    <p class="text-gray-700">현재가: 로드 중...</p>
+                    <p class="text-gray-700">변동률(24H): 로드 중...</p>
+                    <p class="text-gray-700">거래량(24H): 로드 중...</p>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-lg shadow">
+                    <h3 class="font-bold text-lg text-blue-800">DOGE</h3>
+                    <p class="text-gray-700">현재가: 로드 중...</p>
+                    <p class="text-gray-700">변동률(24H): 로드 중...</p>
+                    <p class="text-gray-700">거래량(24H): 로드 중...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 실시간 데이터 차트 섹션 -->
+        <div id="charts-section" class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">실시간 데이터 차트</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- 각 코인별 가격 추이 차트 -->
+                <div class="bg-gray-50 p-4 rounded-lg shadow-md chart-container">
+                    <h3 class="text-xl font-medium mb-2 text-blue-700">BTC 가격 추이</h3>
+                    <canvas id="btcPriceChart"></canvas>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg shadow-md chart-container">
+                    <h3 class="text-xl font-medium mb-2 text-blue-700">ETH 가격 추이</h3>
+                    <canvas id="ethPriceChart"></canvas>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg shadow-md chart-container">
+                    <h3 class="text-xl font-medium mb-2 text-blue-700">DOGE 가격 추이</h3>
+                    <canvas id="dogePriceChart"></canvas>
+                </div>
+                <!-- BTC의 24시간 변동률 및 거래량 차트 (예시로 BTC만 제공) -->
+                <div class="bg-gray-50 p-4 rounded-lg shadow-md col-span-1 lg:col-span-3 chart-container">
+                    <h3 class="text-xl font-medium mb-2 text-blue-700">BTC 24H 변동률</h3>
+                    <canvas id="btcFluctuationChart"></canvas>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg shadow-md col-span-1 lg:col-span-3 chart-container">
+                    <h3 class="text-xl font-medium mb-2 text-blue-700">BTC 24H 거래량</h3>
+                    <canvas id="btcVolumeChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 이상 징후 로그 섹션 -->
+        <div id="anomaly-logs-section" class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">이상 징후 로그</h2>
+            <div id="logs-container" class="bg-gray-50 p-4 rounded-lg shadow-md max-h-96 overflow-y-auto text-sm">
+                <!-- JavaScript를 통해 이상 징후 로그가 여기에 로드됩니다. -->
+                <p class="text-gray-500">로그를 로드 중입니다. anomaly_detection_system.py와 web_server.py가 모두 실행 중인지 확인하세요.</p>
+            </div>
+        </div>
+
+        <div class="text-center text-gray-600 text-sm mt-8">
+            데이터는 약 5초마다 업데이트됩니다.
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/data'; // Flask 서버의 데이터 엔드포인트
+        // Python 스크립트의 API_CALL_INTERVAL_SECONDS 값과 일치해야 합니다.
+        const API_CALL_INTERVAL_SECONDS = 5; 
+
+        let charts = {}; // 생성된 Chart.js 인스턴스를 저장할 객체
+        // 각 코인별 차트 색상 정의
+        const chartColors = {
+            'BTC': 'rgb(255, 99, 132)', // 빨간 계열
+            'ETH': 'rgb(54, 162, 235)', // 파란 계열
+            'DOGE': 'rgb(255, 205, 86)' // 노란 계열
+        };
+
+        /**
+         * Chart.js 차트를 초기화하는 함수
+         * @param {string} chartId HTML Canvas 요소의 ID
+         * @param {string} label 차트 데이터셋의 라벨 (예: "BTC 가격")
+         * @param {string} color 차트 선의 색상
+         * @param {boolean} isFluctuation Y축 라벨을 변동률(%)로 할지 여부
+         * @param {boolean} isVolume Y축 라벨을 거래량으로 할지 여부
+         */
+        function initializeChart(chartId, label, color, isFluctuation = false, isVolume = false) {
+            const ctx = document.getElementById(chartId).getContext('2d');
+            return new Chart(ctx, {
+                type: 'line', // 선형 차트
+                data: {
+                    labels: [], // X축 (시간) 라벨
+                    datasets: [{
+                        label: label,
+                        data: [], // Y축 데이터
+                        borderColor: color, // 선 색상
+                        tension: 0.1, // 선의 부드러움 (베지어 곡선)
+                        fill: false // 선 아래 영역 채우기 여부
+                    }]
+                },
+                options: {
+                    responsive: true, // 반응형
+                    maintainAspectRatio: false, // 컨테이너 크기에 따라 비율 유지 안 함
+                    scales: {
+                        x: {
+                            type: 'time', // 시간 스케일
+                            time: {
+                                parser: 'yyyy-MM-dd HH:mm:ss', // 파이썬에서 오는 시간 문자열 형식
+                                tooltipFormat: 'HH:mm:ss', // 툴팁에 표시될 시간 형식
+                                unit: 'second', // 가장 작은 단위
+                                displayFormats: {
+                                    second: 'HH:mm:ss' // 화면에 표시될 시간 형식
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: '시간'
+                            }
+                        },
+                        y: {
+                            beginAtZero: false, // Y축을 0부터 시작할지 여부
+                            title: {
+                                display: true,
+                                // Y축 라벨을 동적으로 설정
+                                text: isFluctuation ? '변동률 (%)' : (isVolume ? '거래량' : '가격 (KRW)')
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 0 // 실시간 업데이트 시 깜빡임 방지를 위해 애니메이션 비활성화
+                    },
+                    plugins: {
+                        legend: {
+                            display: false // 범례 숨기기 (단일 데이터셋이므로)
+                        }
+                    }
+                }
+            });
+        }
+
+        // 모든 필요한 차트 초기화 함수
+        function setupCharts() {
+            charts.btcPrice = initializeChart('btcPriceChart', 'BTC 가격', chartColors['BTC']);
+            charts.ethPrice = initializeChart('ethPriceChart', 'ETH 가격', chartColors['ETH']);
+            charts.dogePrice = initializeChart('dogePriceChart', 'DOGE 가격', chartColors['DOGE']);
+            // BTC에 대해서만 변동률과 거래량 차트 초기화
+            charts.btcFluctuation = initializeChart('btcFluctuationChart', 'BTC 24H 변동률', 'rgb(75, 192, 192)', true);
+            charts.btcVolume = initializeChart('btcVolumeChart', 'BTC 24H 거래량', 'rgb(153, 102, 255)', false, true);
+        }
+
+        // 서버에서 데이터를 가져와 UI를 업데이트하는 비동기 함수
+        async function fetchDataAndUpdateUI() {
+            try {
+                const response = await fetch(API_URL);
+                // HTTP 응답이 성공적인지 확인
+                if (!response.ok) {
+                    throw new Error(`HTTP 오류! 상태: ${response.status}. 서버가 실행 중인지 확인하세요.`);
+                }
+                const data = await response.json(); // JSON 데이터 파싱
+
+                // 1. 코인별 요약 정보 업데이트
+                const coinSummariesDiv = document.getElementById('coin-summaries');
+                coinSummariesDiv.innerHTML = ''; // 기존 내용 지우기
+
+                for (const coinSymbol of Object.keys(data.current_summary)) {
+                    const summary = data.current_summary[coinSymbol];
+                    // 'N/A' 값 처리 및 숫자 형식화
+                    const closingPrice = summary.closing_price !== 'N/A' ? parseFloat(summary.closing_price).toLocaleString() + ' KRW' : 'N/A';
+                    const fluctuateRate = summary.fluctate_rate_24H !== 'N/A' ? parseFloat(summary.fluctate_rate_24H).toFixed(2) + '%' : 'N/A';
+                    const unitsTraded = summary.units_traded_24H !== 'N/A' ? parseFloat(summary.units_traded_24H).toLocaleString() : 'N/A';
+
+                    const summaryCard = `
+                        <div class="bg-blue-50 p-4 rounded-lg shadow">
+                            <h3 class="font-bold text-lg text-blue-800">${coinSymbol}</h3>
+                            <p class="text-gray-700">현재가: ${closingPrice}</p>
+                            <p class="text-gray-700">변동률(24H): ${fluctuateRate}</p>
+                            <p class="text-gray-700">거래량(24H): ${unitsTraded}</p>
+                        </div>
+                    `;
+                    coinSummariesDiv.innerHTML += summaryCard;
+                }
+
+                // 2. 차트 데이터 업데이트
+                for (const coinSymbol of Object.keys(data.history)) {
+                    const history = data.history[coinSymbol];
+                    const timestamps = history.map(d => d.timestamp); // 시간 라벨 추출
+
+                    // 가격 차트 업데이트
+                    const priceData = history.map(d => (d.closing_price !== 'N/A' ? parseFloat(d.closing_price) : null));
+                    if (charts[`${coinSymbol.toLowerCase()}Price`]) {
+                        charts[`${coinSymbol.toLowerCase()}Price`].data.labels = timestamps;
+                        charts[`${coinSymbol.toLowerCase()}Price`].data.datasets[0].data = priceData;
+                        charts[`${coinSymbol.toLowerCase()}Price`].update();
+                    }
+
+                    // BTC에 대해서만 변동률과 거래량 차트 업데이트
+                    if (coinSymbol === 'BTC') {
+                        const fluctuationData = history.map(d => (d.fluctate_rate_24H !== 'N/A' ? parseFloat(d.fluctate_rate_24H) : null));
+                        charts.btcFluctuation.data.labels = timestamps;
+                        charts.btcFluctuation.data.datasets[0].data = fluctuationData;
+                        charts.btcFluctuation.update();
+
+                        const volumeData = history.map(d => (d.units_traded_24H !== 'N/A' ? parseFloat(d.units_traded_24H) : null));
+                        charts.btcVolume.data.labels = timestamps;
+                        charts.btcVolume.data.datasets[0].data = volumeData;
+                        charts.btcVolume.update();
+                    }
+                }
+
+                // 3. 이상 징후 로그 업데이트
+                const logsContainer = document.getElementById('logs-container');
+                logsContainer.innerHTML = ''; // 기존 로그 지우기
+                // 최신 로그가 위로 오도록 역순으로 정렬 후 표시
+                data.anomaly_logs.slice().reverse().forEach(log => {
+                    const logEntry = document.createElement('p');
+                    // 로그 메시지에 따라 클래스 추가 (색상 변경)
+                    let logTypeClass = '';
+                    if (log.includes('[24H 변동률 이상 감지 !!!]')) {
+                        logTypeClass = 'fluctuation-alarm';
+                    } else if (log.includes('[추세 이탈 이상 감지!]')) {
+                        logTypeClass = 'trend-alarm';
+                    } else if (log.includes('[자전거래 의심 감지!]')) {
+                        logTypeClass = 'wash-trade-alarm';
+                    } else if (log.includes('[호가창 매물벽 감지 -')) {
+                        logTypeClass = 'order-wall-alarm';
+                    } else if (log.includes('[펌프 앤 덤프 의심 감지!]')) {
+                        logTypeClass = 'pump-dump-alarm';
+                    } else if (log.includes('[스푸핑 의심 감지!]')) { // 스푸핑 알람 추가
+                        logTypeClass = 'spoofing-alarm';
+                    }
+                    
+                    logEntry.className = `py-1 border-b border-gray-200 last:border-b-0 ${logTypeClass}`;
+                    logEntry.textContent = log;
+                    logsContainer.appendChild(logEntry);
+                });
+                // 로그 컨테이너 스크롤을 최하단으로 유지 (선택 사항)
+                logsContainer.scrollTop = logsContainer.scrollHeight;
+
+            } catch (error) {
+                console.error("데이터를 가져오는 중 오류 발생:", error);
+                const logsContainer = document.getElementById('logs-container');
+                logsContainer.innerHTML = `<p class="text-red-500">데이터 로드 중 오류 발생: ${error.message}. anomaly_detection_system.py와 web_server.py가 모두 실행 중인지 확인하세요.</p>`;
+            }
+        }
+
+        // 페이지 로드 시 차트 초기화 및 데이터 가져오기 시작
+        document.addEventListener('DOMContentLoaded', () => {
+            setupCharts(); // 차트 초기 설정
+            fetchDataAndUpdateUI(); // 초기 데이터 로드 및 UI 업데이트
+            // 주기적으로 데이터 가져와 UI 업데이트 (API_CALL_INTERVAL_SECONDS마다)
+            setInterval(fetchDataAndUpdateUI, API_CALL_INTERVAL_SECONDS * 1000); 
+        });
+    </script>
+</body>
+</html>
